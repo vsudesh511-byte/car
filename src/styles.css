@@ -1,0 +1,228 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+/*
+ * CarVerse design system — "Trackside Ledger".
+ * Neutral steel surfaces, near-black ink, one hot rally-red accent,
+ * Manrope for text and JetBrains Mono for spec labels.
+ * All colors are oklch tokens; never hardcode colors in components.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-surface: var(--surface);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-body: var(--body);
+  --color-line: var(--line);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --animate-rise: rise 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --radius: 0.75rem;
+
+  --surface: #fff7ed;
+  --panel: #fffaf5;
+  --ink: #431407;
+  --ink-foreground: #fff7ed;
+  --body: #9a3412;
+  --line: #fed7aa;
+
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--ink-foreground);
+  --secondary: #ffedd5;
+  --secondary-foreground: var(--ink);
+  --muted: #ffedd5;
+  --muted-foreground: var(--body);
+  --accent: #ea580c;
+  --accent-foreground: #fffaf5;
+  --destructive: #dc2626;
+  --destructive-foreground: #fffaf5;
+  --success: #16a34a;
+  --success-foreground: #fffaf5;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+}
+
+.dark {
+  --surface: #171411;
+  --panel: #211d19;
+  --ink: #fff7ed;
+  --ink-foreground: #29150c;
+  --body: #d6bfae;
+  --line: #4a3a30;
+
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--ink-foreground);
+  --secondary: #342820;
+  --secondary-foreground: var(--ink);
+  --muted: #342820;
+  --muted-foreground: var(--body);
+  --accent: #fb923c;
+  --accent-foreground: #281208;
+  --destructive: #f87171;
+  --destructive-foreground: #280909;
+  --success: #4ade80;
+  --success-foreground: #052e16;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility field {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+  background-color: var(--color-panel);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &::placeholder {
+    color: var(--color-body);
+  }
+
+  &:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-accent) 18%, transparent);
+  }
+}
+
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-body);
+}
+
+@utility btn-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--color-ink);
+  color: var(--color-ink-foreground);
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: color-mix(in oklab, var(--color-ink) 90%, white);
+  }
+}
+
+@utility btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: color-mix(in oklab, var(--color-accent) 90%, black);
+  }
+}
+
+@utility btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in oklab, var(--color-ink) 25%, transparent);
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
