@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { PYTHON_API, errorMessage, request } from "@/lib/api";
 import { formatPrice } from "@/lib/cars";
 import { MAX_COMPARE, useCars, useCompare, writeCompare } from "@/lib/store";
 
@@ -33,12 +35,47 @@ const rows = [
   ["Features", (c: any) => c.features.join(", ")],
 ] as const;
 
+type Insights = { best: Record<string, string[]>; verdict: string[] };
+
+/** Asks the Python service which car wins each spec. */
+function useInsights(ids: string[], cars: unknown[]) {
+  const [insights, setInsights] = useState<Insights | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const key = ids.join(",");
+
+  useEffect(() => {
+    if (ids.length < 2) {
+      setInsights(null);
+      return;
+    }
+    let cancelled = false;
+    request<Insights>(`${PYTHON_API}/compare?ids=${encodeURIComponent(key)}`)
+      .then((data) => {
+        if (!cancelled) {
+          setInsights(data);
+          setError(null);
+        }
+      })
+      .catch((e) => !cancelled && setError(errorMessage(e)));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, cars]);
+
+  return { insights, error };
+}
+
 function ComparePage() {
   const cars = useCars();
   const compare = useCompare();
   const selected = compare
     .map((id) => cars.find((c) => c.id === id))
     .filter((c): c is NonNullable<typeof c> => Boolean(c));
+  const { insights, error } = useInsights(
+    selected.map((c) => c.id),
+    cars,
+  );
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -64,6 +101,23 @@ function ComparePage() {
               Clear all
             </button>
           </div>
+
+          {selected.length >= 2 && (
+            <div className="mt-4 rounded-xl border border-line bg-panel p-5">
+              <p className="label-mono">Smart verdict · Python service</p>
+              {error ? (
+                <p className="mt-2 text-sm text-body">Verdict unavailable: {error}</p>
+              ) : !insights ? (
+                <p className="mt-2 text-sm text-body">Analysing…</p>
+              ) : (
+                <ul className="mt-2 grid gap-1 text-sm font-semibold text-ink">
+                  {insights.verdict.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-panel">
             <table className="w-full min-w-[640px] text-left text-sm">
@@ -92,11 +146,18 @@ function ComparePage() {
                 {rows.map(([label, get]) => (
                   <tr key={label} className="border-b border-line last:border-0">
                     <td className="label-mono p-4">{label}</td>
-                    {selected.map((c) => (
-                      <td key={c.id} className="p-4 font-semibold text-ink">
-                        {get(c)}
-                      </td>
-                    ))}
+                    {selected.map((c) => {
+                      const isBest = insights?.best[label]?.includes(c.id);
+                      return (
+                        <td
+                          key={c.id}
+                          className={`p-4 font-semibold ${isBest ? "text-accent" : "text-ink"}`}
+                        >
+                          {get(c)}
+                          {isBest && <span className="label-mono ml-2 !text-accent">Best</span>}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>

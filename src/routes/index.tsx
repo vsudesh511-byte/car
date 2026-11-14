@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CarCard } from "@/components/CarCard";
+import { CarFinder } from "@/components/CarFinder";
 import { Notice } from "@/components/Notice";
 import { useNotice } from "@/hooks/useNotice";
 import { useCars } from "@/lib/store";
@@ -85,6 +86,8 @@ function Index() {
           ))}
         </div>
       </section>
+
+      <CarFinder />
 
       <section className="mx-auto max-w-6xl px-4 pb-4">
         <div className="grid gap-4 sm:grid-cols-3">

@@ -1,5 +1,10 @@
 # CarVerse Hub
 
+> **Now with a real backend.** The website uses three services that share one SQLite database:
+> a **Java** (Spring Boot) cars API, a **Python** (Flask) compare/recommendation/statistics service
+> and a **PHP** admin-login and contact-form service. See [`backend/README.md`](backend/README.md)
+> to run them. The original project brief below described the first, frontend-only version.
+
 Build a simple and modern static website called CarVerse – Car Showcase & Comparison.
 
 This is a college final-year project, so keep everything simple, clean, beginner-friendly, and easy to demonstrate.

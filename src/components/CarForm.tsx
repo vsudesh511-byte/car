@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { errorMessage } from "@/lib/api";
 import { FUEL_TYPES, TRANSMISSIONS, defaultCars, type Car } from "@/lib/cars";
 
 export type CarFormValues = Omit<Car, "id">;
@@ -27,17 +28,18 @@ export function CarForm({
 }: {
   initial?: CarFormValues;
   submitLabel: string;
-  onSubmit: (values: CarFormValues) => void;
+  onSubmit: (values: CarFormValues) => void | Promise<void>;
 }) {
   const [values, setValues] = useState<CarFormValues>(initial ?? empty);
   const [featureText, setFeatureText] = useState((initial?.features ?? []).join(", "));
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   function set<K extends keyof CarFormValues>(key: K, value: CarFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!values.name.trim() || !values.brand.trim()) {
       setError("Car name and brand are required.");
@@ -48,7 +50,9 @@ export function CarForm({
       return;
     }
     setError(null);
-    onSubmit({
+    setSaving(true);
+    try {
+      await onSubmit({
       ...values,
       name: values.name.trim(),
       brand: values.brand.trim(),
@@ -57,7 +61,12 @@ export function CarForm({
         .split(",")
         .map((f) => f.trim())
         .filter(Boolean),
-    });
+      });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -231,8 +240,8 @@ export function CarForm({
       )}
 
       <div>
-        <button type="submit" className="btn-accent">
-          {submitLabel}
+        <button type="submit" className="btn-accent" disabled={saving}>
+          {saving ? "Saving…" : submitLabel}
         </button>
       </div>
     </form>

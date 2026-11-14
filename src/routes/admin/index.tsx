@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { errorMessage } from "@/lib/api";
 import { ADMIN_PASSWORD, ADMIN_USERNAME, login, useAuth } from "@/lib/store";
 
 export const Route = createFileRoute("/admin/")({
@@ -23,18 +24,26 @@ function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (ready && loggedIn) navigate({ to: "/admin/dashboard" });
   }, [ready, loggedIn, navigate]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (login(username, password)) {
-      setError(null);
-      navigate({ to: "/admin/dashboard" });
-    } else {
-      setError("Wrong username or password.");
+    setBusy(true);
+    try {
+      if (await login(username, password)) {
+        setError(null);
+        navigate({ to: "/admin/dashboard" });
+      } else {
+        setError("Wrong username or password.");
+      }
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -70,8 +79,8 @@ function AdminLogin() {
             placeholder="••••••••"
           />
         </div>
-        <button type="submit" className="btn-accent">
-          Login
+        <button type="submit" className="btn-accent" disabled={busy}>
+          {busy ? "Checking…" : "Login"}
         </button>
       </form>
 

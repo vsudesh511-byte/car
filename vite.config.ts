@@ -12,4 +12,17 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      // Forward API calls to the three backend services (see backend/README.md).
+      proxy: {
+        "/api/cars": "http://localhost:9090", // Java Spring Boot
+        "/api/py": "http://localhost:5000", // Python Flask
+        "/api/php": {
+          target: "http://localhost:8000", // PHP built-in server
+          rewrite: (path: string) => path.replace(/^\/api\/php/, ""),
+        },
+      },
+    },
+  },
 });

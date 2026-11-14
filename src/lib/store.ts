@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { defaultCars, type Car } from "./cars";
+import { imageKey, imageUrl, type Car } from "./cars";
+import { ApiError, JAVA_API, PHP_API, errorMessage, getToken, request, setToken } from "./api";
 
-const CARS_KEY = "carverse_cars";
 const COMPARE_KEY = "carverse_compare";
-const AUTH_KEY = "carverse_admin";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -28,49 +27,86 @@ function useLocalValue<T>(read: () => T, fallback: T): T {
   return value;
 }
 
-/* ---------------- cars ---------------- */
+/* ---------------- cars (Java API) ---------------- */
 
-export function readCars(): Car[] {
-  if (typeof window === "undefined") return defaultCars;
+type CarsStatus = { loading: boolean; error: string | null };
+
+let carsCache: Car[] = [];
+let carsStatus: CarsStatus = { loading: true, error: null };
+let carsRequested = false;
+
+const fromApi = (car: Car): Car => ({ ...car, image: imageUrl(car.image) });
+const toApi = (car: Omit<Car, "id">) => ({ ...car, image: imageKey(car.image) });
+
+export async function loadCars() {
   try {
-    const raw = window.localStorage.getItem(CARS_KEY);
-    if (!raw) return defaultCars;
-    const parsed = JSON.parse(raw) as Car[];
-    return Array.isArray(parsed) ? parsed : defaultCars;
-  } catch {
-    return defaultCars;
+    const cars = await request<Car[]>(JAVA_API);
+    carsCache = cars.map(fromApi);
+    carsStatus = { loading: false, error: null };
+  } catch (e) {
+    carsStatus = { loading: false, error: errorMessage(e) };
   }
-}
-
-export function writeCars(cars: Car[]) {
-  window.localStorage.setItem(CARS_KEY, JSON.stringify(cars));
   notify();
 }
 
+function useLoadCarsOnce() {
+  useEffect(() => {
+    if (!carsRequested) {
+      carsRequested = true;
+      void loadCars();
+    }
+  }, []);
+}
+
 export function useCars(): Car[] {
-  return useLocalValue(readCars, defaultCars);
+  useLoadCarsOnce();
+  return useLocalValue(() => carsCache, []);
 }
 
-export function addCar(car: Omit<Car, "id">): Car {
-  const created: Car = { ...car, id: `car-${Date.now()}` };
-  writeCars([created, ...readCars()]);
-  return created;
+export function useCarsStatus(): CarsStatus {
+  useLoadCarsOnce();
+  return useLocalValue(() => carsStatus, { loading: true, error: null });
 }
 
-export function updateCar(id: string, patch: Omit<Car, "id">) {
-  writeCars(readCars().map((c) => (c.id === id ? { ...patch, id } : c)));
+/** Admin calls: if the token has expired, log out so the UI shows the login page. */
+async function adminRequest<T>(url: string, options: Parameters<typeof request>[1] = {}) {
+  try {
+    return await request<T>(url, { ...options, admin: true });
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) {
+      setToken(null);
+      notify();
+    }
+    throw e;
+  }
 }
 
-export function deleteCar(id: string) {
-  writeCars(readCars().filter((c) => c.id !== id));
+export async function addCar(car: Omit<Car, "id">): Promise<Car> {
+  const created = await adminRequest<Car>(JAVA_API, { method: "POST", body: toApi(car) });
+  await loadCars();
+  return fromApi(created);
+}
+
+export async function updateCar(id: string, patch: Omit<Car, "id">) {
+  await adminRequest(`${JAVA_API}/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: toApi(patch),
+  });
+  await loadCars();
+}
+
+export async function deleteCar(id: string) {
+  await adminRequest(`${JAVA_API}/${encodeURIComponent(id)}`, { method: "DELETE" });
   writeCompare(readCompare().filter((cid) => cid !== id));
+  await loadCars();
 }
 
-export function resetCars() {
-  writeCars(defaultCars);
+export async function resetCars() {
+  await adminRequest(`${JAVA_API}/reset`, { method: "POST" });
+  await loadCars();
 }
 
-/* ---------------- compare ---------------- */
+/* ---------------- compare (kept in the browser) ---------------- */
 
 export const MAX_COMPARE = 3;
 
@@ -108,33 +144,50 @@ export function toggleCompare(id: string): string {
   return "Added to compare";
 }
 
-/* ---------------- admin session ---------------- */
+/* ---------------- admin session (PHP service) ---------------- */
 
 export const ADMIN_USERNAME = "admin";
 export const ADMIN_PASSWORD = "admin123";
 
+let tokenChecked = false;
+
 export function readAuth(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(AUTH_KEY) === "true";
+  return Boolean(getToken());
 }
 
 export function useAuth() {
   const loggedIn = useLocalValue(readAuth, false);
   const [ready, setReady] = useState(false);
-  useEffect(() => setReady(true), []);
+  useEffect(() => {
+    setReady(true);
+    if (!tokenChecked && getToken()) {
+      tokenChecked = true;
+      adminRequest(`${PHP_API}/me.php`).catch(() => {});
+    }
+  }, []);
   return { loggedIn, ready };
 }
 
-export function login(username: string, password: string): boolean {
-  if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-    window.localStorage.setItem(AUTH_KEY, "true");
+/** Returns false for a wrong username/password; throws if the PHP service is down. */
+export async function login(username: string, password: string): Promise<boolean> {
+  try {
+    const res = await request<{ token: string }>(`${PHP_API}/login.php`, {
+      method: "POST",
+      body: { username: username.trim(), password },
+    });
+    setToken(res.token);
+    tokenChecked = true;
     notify();
     return true;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) return false;
+    throw e;
   }
-  return false;
 }
 
 export function logout() {
-  window.localStorage.removeItem(AUTH_KEY);
+  const token = getToken();
+  setToken(null);
   notify();
+  if (token) request(`${PHP_API}/logout.php`, { method: "POST", token }).catch(() => {});
 }

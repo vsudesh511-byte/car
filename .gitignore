@@ -30,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backend services
+backend/database/carverse.db*
+backend/java-api/target/
+backend/python-service/.venv/
+__pycache__/

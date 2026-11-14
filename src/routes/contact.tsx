@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { ApiError, PHP_API, errorMessage, request } from "@/lib/api";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -26,8 +27,10 @@ function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [errors, setErrors] = useState<Errors>({});
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const next: Errors = {};
     if (!form.name.trim()) next.name = "Please enter your name.";
@@ -37,8 +40,20 @@ function ContactPage() {
     if (form.message.trim().length < 10) next.message = "Message should be at least 10 characters.";
     setErrors(next);
     if (Object.keys(next).length > 0) return;
-    setSent(true);
-    setForm({ name: "", email: "", subject: "", message: "" });
+
+    setSending(true);
+    setServerError(null);
+    try {
+      await request(`${PHP_API}/contact.php`, { method: "POST", body: form });
+      setSent(true);
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch (err) {
+      const fields = err instanceof ApiError ? (err.data as { fields?: Errors } | null)?.fields : null;
+      if (fields) setErrors(fields);
+      setServerError(errorMessage(err));
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -54,9 +69,15 @@ function ContactPage() {
             Thank you! Your message has been submitted successfully.
           </p>
           <p className="mt-1 text-sm text-body">
-            This is a demo form, so nothing leaves your browser.
+            It has been saved by the PHP service and the admin can read it on the dashboard.
           </p>
         </div>
+      )}
+
+      {serverError && (
+        <p className="mt-6 rounded-xl border border-line bg-panel p-4 text-sm font-semibold text-destructive">
+          {serverError}
+        </p>
       )}
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4 rounded-xl border border-line bg-panel p-5">
@@ -124,8 +145,8 @@ function ContactPage() {
         </div>
 
         <div>
-          <button type="submit" className="btn-accent">
-            Send message
+          <button type="submit" className="btn-accent" disabled={sending}>
+            {sending ? "Sending…" : "Send message"}
           </button>
         </div>
       </form>

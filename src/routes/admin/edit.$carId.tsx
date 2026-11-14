@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AdminGuard } from "@/components/AdminGuard";
 import { CarForm } from "@/components/CarForm";
-import { updateCar, useCars } from "@/lib/store";
+import { updateCar, useCars, useCarsStatus } from "@/lib/store";
 
 export const Route = createFileRoute("/admin/edit/$carId")({
   head: () => ({
@@ -26,6 +26,7 @@ function EditCar() {
   const { carId } = Route.useParams();
   const navigate = useNavigate();
   const cars = useCars();
+  const { loading } = useCarsStatus();
   const car = cars.find((c) => c.id === carId);
 
   return (
@@ -34,7 +35,9 @@ function EditCar() {
         ← Back to dashboard
       </Link>
 
-      {!car ? (
+      {!car && loading ? (
+        <p className="mt-8 text-sm text-body">Loading car…</p>
+      ) : !car ? (
         <div className="mt-8 rounded-xl border border-line bg-panel p-8 text-center">
           <p className="font-extrabold text-ink">Car not found</p>
           <p className="mt-2 text-sm text-body">It may have been deleted already.</p>
@@ -48,8 +51,8 @@ function EditCar() {
               key={car.id}
               initial={{ ...car }}
               submitLabel="Save changes"
-              onSubmit={(values) => {
-                updateCar(car.id, values);
+              onSubmit={async (values) => {
+                await updateCar(car.id, values);
                 navigate({ to: "/admin/dashboard" });
               }}
             />

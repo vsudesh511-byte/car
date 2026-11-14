@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Notice } from "@/components/Notice";
 import { useNotice } from "@/hooks/useNotice";
 import { formatPrice } from "@/lib/cars";
-import { toggleCompare, useCars, useCompare } from "@/lib/store";
+import { toggleCompare, useCars, useCarsStatus, useCompare } from "@/lib/store";
 
 export const Route = createFileRoute("/cars/$carId")({
   head: () => ({
@@ -26,10 +26,17 @@ export const Route = createFileRoute("/cars/$carId")({
 function CarDetail() {
   const { carId } = Route.useParams();
   const cars = useCars();
+  const { loading } = useCarsStatus();
   const compare = useCompare();
   const { message, notify } = useNotice();
 
   const car = cars.find((c) => c.id === carId);
+
+  if (!car && loading) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-20 text-center text-sm text-body">Loading car…</div>
+    );
+  }
 
   if (!car) {
     return (

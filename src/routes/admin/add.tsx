@@ -36,8 +36,8 @@ function AddCar() {
       <div className="mt-6">
         <CarForm
           submitLabel="Add car"
-          onSubmit={(values) => {
-            addCar(values);
+          onSubmit={async (values) => {
+            await addCar(values);
             navigate({ to: "/admin/dashboard" });
           }}
         />
