@@ -118,9 +118,7 @@ function CarDetail() {
 
       {similar.length > 0 && (
         <section className="mt-14">
-          <h2 className="text-xl font-extrabold tracking-tight text-ink">
-            More from {car.brand}
-          </h2>
+          <h2 className="text-xl font-extrabold tracking-tight text-ink">More from {car.brand}</h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {similar.map((c) => (
               <Link
