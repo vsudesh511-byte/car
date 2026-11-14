@@ -56,10 +56,17 @@ def first_number(text):
     return float(match.group()) if match else 0.0
 
 
+def fuel_efficiency(text):
+    """'18.5 kmpl' -> 18.5; an electric range like '400 km' isn't comparable, so 0.0."""
+    if not re.search(r"km\s*(pl|/\s*l|/\s*kg)", str(text or ""), re.IGNORECASE):
+        return 0.0
+    return first_number(text)
+
+
 def specs(car):
     return {
         "price": car["price"],
-        "mileage": first_number(car["mileage"]),
+        "mileage": fuel_efficiency(car["mileage"]),
         "power": first_number(car["horsepower"]),
         "seating": car["seating"],
     }
