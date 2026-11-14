@@ -143,8 +143,7 @@ export const defaultCars: Car[] = [
     engine: "1199 cc Turbo",
     seating: 5,
     horsepower: "120 hp",
-    description:
-      "A safe, well-built compact SUV with a bold design and a 5-star crash rating.",
+    description: "A safe, well-built compact SUV with a bold design and a 5-star crash rating.",
     features: ["5-star safety", "Voice sunroof", "360° camera", "JBL audio"],
     image: nexon,
   },
