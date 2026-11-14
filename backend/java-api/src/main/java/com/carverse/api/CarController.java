@@ -1,6 +1,7 @@
 package com.carverse.api;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -61,7 +62,7 @@ public class CarController {
                       @RequestBody Car body) {
         admin.requireAdmin(token);
         validate(body);
-        Car car = body.withId("car-" + System.currentTimeMillis());
+        Car car = body.withId("car-" + UUID.randomUUID());
         cars.insert(car);
         return car;
     }
