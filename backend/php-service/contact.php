@@ -6,6 +6,13 @@
  */
 require __DIR__ . '/db.php';
 
+/** Counts UTF-8 characters (not bytes), so Hindi and other non-ASCII text isn't rejected early. */
+function char_count(string $text): int
+{
+    $count = preg_match_all('/./us', $text);
+    return $count === false ? strlen($text) : $count;
+}
+
 switch ($_SERVER['REQUEST_METHOD']) {
     case 'POST':
         $input = json_input();
@@ -18,10 +25,10 @@ switch ($_SERVER['REQUEST_METHOD']) {
         if ($name === '') $errors['name'] = 'Please enter your name.';
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Please enter a valid email address.';
         if ($subject === '') $errors['subject'] = 'Please enter a subject.';
-        if (strlen($message) < 10) $errors['message'] = 'Message should be at least 10 characters.';
-        if (strlen($name) > 100) $errors['name'] = 'Name should be at most 100 characters.';
-        if (strlen($subject) > 200) $errors['subject'] = 'Subject should be at most 200 characters.';
-        if (strlen($message) > 5000) $errors['message'] = 'Message should be at most 5000 characters.';
+        if (char_count($message) < 10) $errors['message'] = 'Message should be at least 10 characters.';
+        if (char_count($name) > 100) $errors['name'] = 'Name should be at most 100 characters.';
+        if (char_count($subject) > 200) $errors['subject'] = 'Subject should be at most 200 characters.';
+        if (char_count($message) > 5000) $errors['message'] = 'Message should be at most 5000 characters.';
         if ($errors) {
             respond(['error' => 'Please fix the highlighted fields.', 'fields' => $errors], 422);
         }
