@@ -19,6 +19,9 @@ switch ($_SERVER['REQUEST_METHOD']) {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Please enter a valid email address.';
         if ($subject === '') $errors['subject'] = 'Please enter a subject.';
         if (strlen($message) < 10) $errors['message'] = 'Message should be at least 10 characters.';
+        if (strlen($name) > 100) $errors['name'] = 'Name should be at most 100 characters.';
+        if (strlen($subject) > 200) $errors['subject'] = 'Subject should be at most 200 characters.';
+        if (strlen($message) > 5000) $errors['message'] = 'Message should be at most 5000 characters.';
         if ($errors) {
             respond(['error' => 'Please fix the highlighted fields.', 'fields' => $errors], 422);
         }

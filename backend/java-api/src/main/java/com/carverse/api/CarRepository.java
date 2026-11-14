@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -77,10 +79,23 @@ public class CarRepository {
         return jdbc.update("DELETE FROM cars WHERE id = ?", id) > 0;
     }
 
+    /** Loads the sample cars on first start, so cars an admin deletes stay deleted after a restart. */
+    @EventListener(ApplicationReadyEvent.class)
+    public void seedIfEmpty() {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM cars", Integer.class);
+        if (count == null || count == 0) {
+            loadSampleData();
+        }
+    }
+
     /** Deletes every car and loads the sample cars from database/seed.sql again. */
     @Transactional
     public void resetToSampleData() {
         jdbc.update("DELETE FROM cars");
+        loadSampleData();
+    }
+
+    private void loadSampleData() {
         new ResourceDatabasePopulator(new FileSystemResource("../database/seed.sql")).execute(dataSource);
     }
 
